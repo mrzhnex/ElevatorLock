@@ -396,3 +396,4 @@ E:\SCP SL plugins\ElevatorLock\ElevatorLock\obj\Debug\ElevatorLock.csproj.CoreCo
 E:\SCP SL plugins\ElevatorLock\ElevatorLock\obj\Debug\ElevatorLock.csproj.CopyComplete
 E:\SCP SL plugins\ElevatorLock\ElevatorLock\obj\Debug\ElevatorLock.dll
 E:\SCP SL plugins\ElevatorLock\ElevatorLock\obj\Debug\ElevatorLock.pdb
+E:\SCP SL plugins\ElevatorLock\ElevatorLock\obj\Debug\ElevatorLock.csprojAssemblyReference.cache

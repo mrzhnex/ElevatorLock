@@ -19,13 +19,16 @@ namespace ElevatorLock
         {
             string[] args = ev.Command.Split(' ');
             bool silent = false;
-            if (args.Length < 2)
+            if (args.Length == 0)
                 return;
             if (args[0] != "elock")
+                return;
+            ev.Allow = false;
+            if (args.Length < 2)
             {
+                ev.Sender.RAMessage("Out of args. Usage: " + GetUsageElock(), false);
                 return;
             }
-            ev.Allow = false;
             if (args[1] == "all")
             {
                 if (args.Length < 3)
