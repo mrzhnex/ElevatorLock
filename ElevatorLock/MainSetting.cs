@@ -4,8 +4,8 @@ namespace ElevatorLock
 {
     public class MainSetting : Plugin
     {
-        public override string getName => "ElevatorLock";
-        private SetEvent SetEvent;
+        public override string getName => nameof(ElevatorLock);
+        public SetEvent SetEvent { get; set; }
 
         public override void OnEnable()
         {
