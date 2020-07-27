@@ -1,56 +1,50 @@
-﻿using EXILED;
-using EXILED.Extensions;
+﻿using Exiled.API.Features;
+using Exiled.Events.EventArgs;
+using UnityEngine;
+using System.Collections.Generic;
 
 namespace ElevatorLock
 {
     public class SetEvent
     {
-        public void OnRoundStart()
-        {
-            Global.elevators = Map.Lifts;
-        }
-
-        public string GetUsageElock()
+        private string GetUsageElock()
         {
             return "elock <all>(lock/unlock) | (elevator_name) | <get> = (return list of elevators name)";
         }
 
-        public void OnRemoveAdminCommand(ref RACommandEvent ev)
+        internal void OnSendingRemoteAdminCommand(SendingRemoteAdminCommandEventArgs ev)
         {
-            string[] args = ev.Command.Split(' ');
             bool silent = false;
-            if (args.Length == 0)
+            if (ev.Name.ToLower() != "elock")
                 return;
-            if (args[0] != "elock")
-                return;
-            ev.Allow = false;
-            if (args.Length < 2)
+            ev.IsAllowed = false;
+            if (ev.Arguments.Count < 1)
             {
-                ev.Sender.RAMessage("Out of args. Usage: " + GetUsageElock(), false);
+                ev.Sender.RemoteAdminMessage("Out of args. Usage: " + GetUsageElock(), false);
                 return;
             }
-            if (args[1] == "all")
+            if (ev.Arguments[0] == "all")
             {
-                if (args.Length < 3)
+                if (ev.Arguments.Count < 2)
                 {
-                    ev.Sender.RAMessage("Out of args. Usage: " + GetUsageElock(), false);
+                    ev.Sender.RemoteAdminMessage("Out of args. Usage: " + GetUsageElock(), false);
                     return;
                 }
                 bool locked;
-                if (args[2].ToLower().Contains("unlock"))
+                if (ev.Arguments[1].ToLower().Contains("unlock"))
                     locked = false;
-                else if (args[2].ToLower().Contains("lock"))
+                else if (ev.Arguments[1].ToLower().Contains("lock"))
                     locked = true;
                 else
                 {
-                    ev.Sender.RAMessage("Out of args. Usage: " + GetUsageElock(), false);
+                    ev.Sender.RemoteAdminMessage("Out of args. Usage: " + GetUsageElock(), false);
                     return;
                 }
-                if (args.Length > 3 && args[3].ToLower() == "silent")
+                if (ev.Arguments.Count > 3 && ev.Arguments[2].ToLower() == "silent")
                     silent = true;
-                foreach (Lift el in Global.elevators)
+                foreach (Lift el in Map.Lifts)
                 {
-                    el.Networklocked = locked;
+                    el.Network_locked = locked;
                 }
                 string answer = "locked";
                 if (!locked)
@@ -62,46 +56,46 @@ namespace ElevatorLock
                     else
                         NineTailedFoxAnnouncer.singleton.ServerOnlyAddGlitchyPhrase("ALL ELEVATOR SYSTEM HAS BEEN ACTIVATED", 0.0f, 0.0f);
                 }
-                ev.Sender.RAMessage("All elevators has been " + answer);
+                ev.Sender.RemoteAdminMessage("All elevators has been " + answer);
                 return;
             }
-            else if (args[1] == "get")
+            else if (ev.Arguments[0] == "get")
             {
                 string answer = string.Empty;
-                foreach (Lift el in Global.elevators)
+                foreach (Lift el in Map.Lifts)
                 {
                     if (answer.Contains(el.elevatorName.ToString()))
                         continue;
                     answer = answer + el.elevatorName.ToString() + ", ";
                 }
 
-                ev.Sender.RAMessage("Names: " + answer);
+                ev.Sender.RemoteAdminMessage("Names: " + answer);
                 return;
             }
             else
             {
-                if (args.Length > 3)
+                if (ev.Arguments.Count > 2)
                 {
-                    ev.Sender.RAMessage("Wrong args. Usage: " + GetUsageElock(), false);
+                    ev.Sender.RemoteAdminMessage("Wrong args. Usage: " + GetUsageElock(), false);
                     return;
                 }
                 string answer = string.Empty;
                 bool locked = false;
-                foreach (Lift el in Global.elevators)
+                foreach (Lift el in Map.Lifts)
                 {
-                    if (el.elevatorName.ToString().ToLower().Contains(args[1].ToLower()))
+                    if (el.elevatorName.ToString().ToLower().Contains(ev.Arguments[0].ToLower()))
                     {
                         answer = answer + el.elevatorName + ", ";
-                        el.Networklocked = !el.Networklocked;
-                        locked = el.Networklocked;
+                        el.Network_locked = !el.Network_locked;
+                        locked = el.Network_locked;
                     }
                 }
                 if (answer == string.Empty)
                 {
-                    ev.Sender.RAMessage("Not found elevators_name: " + GetUsageElock(), false);
+                    ev.Sender.RemoteAdminMessage("Not found elevators_name: " + GetUsageElock(), false);
                     return;
                 }
-                if (args.Length > 2 && args[2].ToLower() == "silent")
+                if (ev.Arguments.Count > 1 && ev.Arguments[1].ToLower() == "silent")
                     silent = true;
                 if (!silent)
                 {
@@ -149,8 +143,39 @@ namespace ElevatorLock
                     }
                 }
 
-                ev.Sender.RAMessage("Change lock status for: " + answer);
+                ev.Sender.RemoteAdminMessage("Change lock status for: " + answer);
                 return;
+            }
+        }
+
+        internal void OnWaitingForPlayers()
+        {
+            Global.BrokenElevators = new List<Lift.Elevator>();
+        }
+
+        internal void OnInteractingElevator(InteractingElevatorEventArgs ev)
+        {
+            if (Global.IsFullRp && Global.BrokenElevators.Contains(ev.Elevator))
+                ev.IsAllowed = false;
+        }
+
+        internal void OnExplodingGrenade(ExplodingGrenadeEventArgs ev)
+        {
+            if (!Global.IsFullRp || !ev.IsFrag)
+                return;
+
+            foreach (Lift lift in Map.Lifts)
+            {
+                foreach (Lift.Elevator elevator in lift.elevators)
+                {
+                    if (Vector3.Distance(ev.Grenade.gameObject.transform.position, elevator.door.gameObject.transform.position) < Global.DistanceToDestroyElevator)
+                    {
+                        if (!Global.BrokenElevators.Contains(elevator))
+                        {
+                            Global.BrokenElevators.AddRange(lift.elevators);
+                        }
+                    }
+                }
             }
         }
     }

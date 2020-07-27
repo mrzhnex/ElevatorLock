@@ -2,10 +2,10 @@
 
 namespace ElevatorLock
 {
-    class Global
+    public static class Global
     {
-        public static bool el_is_full_rp = true;
-        public static List<Lift> elevators = new List<Lift>();
-        public static float distance_to_destroy_lift = 5.0f;
+        public static bool IsFullRp = false;
+        public static float DistanceToDestroyElevator = 7.0f;
+        public static List<Lift.Elevator> BrokenElevators = new List<Lift.Elevator>();
     }
 }
